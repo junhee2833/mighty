@@ -90,9 +90,7 @@ action은 감정 연출용이다:
       max_output_tokens: 300,
     });
 
-    const text =
-      response.output?.[0]?.content?.[0]?.text ||
-      response.output_text;
+    const text = response.output_text;
 
     if (!text) {
       throw new Error("Empty AI response");
@@ -103,21 +101,21 @@ action은 감정 연출용이다:
     try {
       parsed = JSON.parse(text);
     } catch {
-      console.error("JSON parse failed. Raw response:", text);
+      console.error("JSON parse failed:", text);
       parsed = {
-        message: "뭐야 갑자기 말이 이상하게 나왔네 ㅋㅋ 다시 말해봐",
-        action: "잠깐 당황한 듯 멈칫한다",
+        message: "뭐야 갑자기 이상하게 말했네 ㅋㅋ 다시 말해봐",
+        action: "잠깐 멈칫한다",
       };
     }
 
     const safeMessage =
       typeof parsed.message === "string" && parsed.message.trim()
         ? parsed.message.trim()
-        : "뭐야 갑자기 말이 이상하게 나왔네 ㅋㅋ 다시 말해봐";
+        : "뭐야 갑자기 이상하게 말했네 ㅋㅋ 다시 말해봐";
     const safeAction =
       typeof parsed.action === "string" && parsed.action.trim()
         ? parsed.action.trim()
-        : "잠깐 당황한 듯 멈칫한다";
+        : "잠깐 멈칫한다";
 
     return NextResponse.json({
       message: safeMessage,
