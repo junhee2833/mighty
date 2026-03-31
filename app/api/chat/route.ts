@@ -1,10 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+export const runtime = "nodejs";
+
+function getClient() {
+  if (!process.env.OPENAI_API_KEY) {
+    throw new Error("OPENAI_API_KEY is missing");
+  }
+
+  return new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY,
+  });
+}
 
 export async function POST(req: NextRequest) {
   try {
+    const client = getClient();
     const { character, messages, userMessage, userName } = await req.json();
     const safeUserName =
       typeof userName === "string" && userName.trim().length > 0
@@ -28,7 +39,6 @@ ${safeUserName ? `상대방 이름은 ${safeUserName}이다. 너무 자주 부�
 - 초반: 가벼운 관심, 장난, 거리감 있음
 - 중반: 은근한 호감 표현, 신경 쓰는 티
 - 후반: 감정이 드러나기 시작, 분위기 살짝 진지해짐
-
 절대 처음부터 과하게 들이대지 말 것.
 
 대화 스타일 규칙:
@@ -55,32 +65,68 @@ action은 감정 연출용이다:
 - 성적 표현 금지
 - 캐릭터 성격 유지`;
 
-    const apiMessages: OpenAI.Chat.ChatCompletionMessageParam[] = [
-      { role: "system", content: systemPrompt },
-      ...messages
-        .slice(-10)
-        .map((m: { sender: string; message: string }) => ({
-          role: m.sender === "user" ? ("user" as const) : ("assistant" as const),
-          content: m.message,
-        })),
-      { role: "user", content: userMessage },
-    ];
+    const recentConversation = Array.isArray(messages)
+      ? messages
+          .slice(-10)
+          .map((m: { sender: string; message: string }) => {
+            const role = m.sender === "user" ? "사용자" : "상대방";
+            return `${role}: ${m.message}`;
+          })
+          .join("\n")
+      : "";
 
-    const completion = await openai.chat.completions.create({
+    const response = await client.responses.create({
       model: "gpt-4o-mini",
-      messages: apiMessages,
-      response_format: { type: "json_object" },
-      max_tokens: 300,
+      input: [
+        {
+          role: "system",
+          content: systemPrompt,
+        },
+        {
+          role: "user",
+          content: `이전 대화:\n${recentConversation || "(없음)"}\n\n사용자 새 메시지: ${userMessage}`,
+        },
+      ],
+      max_output_tokens: 300,
     });
 
-    const content = completion.choices[0].message.content;
-    if (!content) throw new Error("No content");
+    const text =
+      response.output?.[0]?.content?.[0]?.text ||
+      response.output_text;
 
-    return NextResponse.json(JSON.parse(content));
-  } catch (error) {
+    if (!text) {
+      throw new Error("Empty AI response");
+    }
+
+    let parsed: { message?: unknown; action?: unknown };
+
+    try {
+      parsed = JSON.parse(text);
+    } catch {
+      console.error("JSON parse failed. Raw response:", text);
+      parsed = {
+        message: "뭐야 갑자기 말이 이상하게 나왔네 ㅋㅋ 다시 말해봐",
+        action: "잠깐 당황한 듯 멈칫한다",
+      };
+    }
+
+    const safeMessage =
+      typeof parsed.message === "string" && parsed.message.trim()
+        ? parsed.message.trim()
+        : "뭐야 갑자기 말이 이상하게 나왔네 ㅋㅋ 다시 말해봐";
+    const safeAction =
+      typeof parsed.action === "string" && parsed.action.trim()
+        ? parsed.action.trim()
+        : "잠깐 당황한 듯 멈칫한다";
+
+    return NextResponse.json({
+      message: safeMessage,
+      action: safeAction,
+    });
+  } catch (error: unknown) {
     console.error("Chat API error:", error);
     return NextResponse.json(
-      { error: "응답 생성에 실패했습니다." },
+      { error: "서버 내부 오류가 발생했습니다." },
       { status: 500 }
     );
   }
