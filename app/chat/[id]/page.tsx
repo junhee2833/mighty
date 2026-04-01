@@ -85,12 +85,7 @@ export default function ChatPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          character: {
-            name: character.name,
-            personality: character.personality,
-            speechStyle: character.speechStyle,
-            funnyTrait: character.funnyTrait,
-          },
+          characterId: character.id,
           messages: snapshot.messages.slice(-10).map((m) => ({
             sender: m.sender,
             message: m.message,

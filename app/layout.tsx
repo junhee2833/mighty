@@ -15,6 +15,20 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "두근두근 상팔 - 상팔 미연시",
   description: "상팔의 존잘들과 연애해보세요.",
+   openGraph: {
+    title: "두근두근 상팔 💕",
+    description: "상팔 미연시 게임",
+    url: "https://mightysk8.netlify.app",
+    siteName: "두근두근 상팔 💕",
+    images: [
+      {
+        url: "https://mightysk8.netlify.app/public/dugun.png",
+        width: 1200,
+        height: 630,
+      },
+    ],
+    type: "website",
+  },
 };
 
 export default function RootLayout({
