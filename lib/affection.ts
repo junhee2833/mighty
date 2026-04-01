@@ -4,7 +4,7 @@ export function calculateAffectionDelta(
   message: string,
   character: Character
 ): number {
-  let delta = 5; // base per exchange
+  let delta = Math.floor(Math.random() * 6) + 5; // base 5~10 per exchange
   const lower = message.toLowerCase();
 
   // 좋아하는 단어가 하나라도 포함되면 큰 버프
