@@ -22,7 +22,7 @@ export const metadata: Metadata = {
     siteName: "두근두근 상팔 💕",
     images: [
       {
-        url: "https://mightysk8.netlify.app/dugun.png",
+        url: "https://mightysk8.netlify.app/dugun2.png",
         width: 1200,
         height: 630,
       },
